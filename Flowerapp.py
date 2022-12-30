@@ -93,7 +93,7 @@ app.layout = html.Div(
                         html.A(
                             html.Img(
                                 className="logo",
-                                src=app.get_asset_url("UHealth_logo.png"),
+                                src=app.get_asset_url("trigal.png"),
                                 style={"width":"75%","height":"75%"}
                             ),
                             href="https://umiamihealth.org/en/",
