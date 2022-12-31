@@ -22,7 +22,11 @@ if month == 1:
 last_month_date = date(year, month -1, day)
 last_week_date = date.today() - timedelta(days = 7)
 last_year_date = date.today() - timedelta(days = 365)
-next_year_date=date.today() +timedelta(days = 100)
+
+next_year_date=date.today() +timedelta(days = 365)
+next_month_date = date.today()+timedelta(days=30)
+next_week_date = date.today() + timedelta(days = 7)
+
 
 
 adequacy_list=["Sat","Insat_P","Insat_NP"]##### This referes to Satisfactory/Instatisfactory and Processed Not processed

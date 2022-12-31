@@ -1,6 +1,6 @@
 import dash
 from dash import dcc
-from dash import html
+from dash import html,dash_table
 import pandas as pd
 import numpy as np
 import plotly.express as px
@@ -9,11 +9,40 @@ from plotly import graph_objs as go
 from plotly.graph_objs import *
 import dash_bootstrap_components as dbc
 from datetime import date
-from sample_data import sensitivity_list,choices,last_week_date, last_year_date, last_month_date,results_list,genotype_list,type_list
+from sample_data import sensitivity_list,choices,last_week_date, last_year_date, last_month_date,results_list,genotype_list,type_list,next_month_date,next_year_date,next_week_date
 from be.controllers.filtering_tools import filter_dataframe,make_plotable,next_monday
 from be.controllers.scatter_plot import scatter_graph
 from be.controllers.adequacy_bar_graph import make_adequacy_graph
 from be.controllers.sensitivity_graph import sensitivity_scatter_graph
+
+
+######################### SOME DATA
+bloques_list=['Bloque 23', 'Bloque 30', 'Bloque 33', 'Bloque 39', 'Bloque 55', 'Bloque 64','Todos los bloques']
+variedades_list=['Potomac crimson',
+ 'Potomac early orange',
+ 'Potomac early rosse',
+ 'Potomac early white',
+ 'Potomac early pink',
+ 'Potomac early yellow',
+ 'Alma',
+ 'Soleado',
+ 'Aneto',
+ 'Veronica',
+ 'Candy crush mint',
+ 'Candy crush red',
+ 'Lucy',
+ 'Skylie']
+########################
+###########################
+df_info = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles a fin del periodo"])
+for variedad in variedades_list[:5]:
+    row=pd.DataFrame({"Variedad":variedad,"Tallos sembrados":np.random.choice(range(1000,2000)),"Disponibles a fin del periodo":np.random.choice(range(1000,1800))},index=[0])
+    df_info=pd.concat([df_info,row])#,ignore_index=True)
+# info=dbc.Table(dftest.to_dict('records'), [{"name": i, "id": i} for i in dftest.columns])
+# df_info=pd.read_csv("info_df.csv")
+
+info = dbc.Table.from_dataframe(df_info, striped=True, bordered=True, hover=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"},id="info_table")
+
 
 
 
@@ -35,13 +64,14 @@ row1 = html.Tr([html.Td("345",id="tests"), html.Td("45.6",id="average"),html.Td(
 
 table_body = [html.Tbody([row1])]
 
-table = dbc.Table(table_header + table_body, bordered=True,style={"width":"380px","height":"20px","margin-bottom":"20px"})
+table = dbc.Table(table_header + table_body, bordered=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"})
 ###############
-def make_drop(lista:list,id:str):
+def make_drop(lista:list,id:str,multi=False):
     menu=dcc.Dropdown(id=id,
     options=[ {"label": i, "value": i} for i in lista],
     value=lista[-1],
     clearable=False,
+    multi=multi
 
 
         )
@@ -51,10 +81,12 @@ def make_drop(lista:list,id:str):
 ###################  GENERATE THE DROPDOWN ELEMENTS  #######################
 
 
-dropletter=make_drop(['Last year', 'Last month', 'Last week'],"dropletter")
+dropletter=make_drop(['Próxima semana', 'Próximo mes'],"dropletter")
 type_drop=make_drop(type_list+["All test types"],"type")
 results_drop=make_drop(results_list+["All results"],"results")###### it starts at 1 to rule out the "All results" option
 genotype_drop=make_drop(genotype_list+["All genotypes"],"genotype")
+bloques_drop=make_drop(bloques_list,"bloques_drop",multi=True)
+variedades_drop=make_drop(variedades_list,"variedades_drop",multi=True)
 
 
 
@@ -94,12 +126,12 @@ app.layout = html.Div(
                             html.Img(
                                 className="logo",
                                 src=app.get_asset_url("trigal.png"),
-                                style={"width":"75%","height":"75%"}
+                                style={"width":"100%","height":"20%"}
                             ),
                             href="https://umiamihealth.org/en/",
                         ),
-                        html.H1("Cytopathology - Monitor"),
-                        html.P(['Select a default time range or a custom time period.',html.Br(), 'On the right you can filter the graphs by Test Type, Result and Genotype']),
+                        html.H1("Pronóstico de producción",style={"text-align":"center"}),
+                        html.P('Seleccione un periodo de tiempo para hacer el pronóstico'),
                         html.Div(
                             className="row",
                             children=[
@@ -130,15 +162,41 @@ app.layout = html.Div(
                                         )
                             ],
                         ),
-                        table,
-                        drawFigure("200px","sensitivity-graph"),
-                        drawFigure("200px","adequacy-graph"),
+                        html.P('Seleccione una variedad'),
+                        html.Div(
+                            className="row",
+                            children=[
+                                html.Div(
+                                    className="div-for-dropdown",
+                                    children=[
+                                        variedades_drop["drop"]
+                                    ],
+                                ),
+                            ],
+                        ),
+                        html.P('Seleccione un bloque'),
+                        html.Div(
+                            className="row",
+                            children=[
+                                html.Div(
+                                    className="div-for-dropdown",
+                                    children=[
+                                        bloques_drop["drop"]
+                                    ],
+                                ),
+                            ],
+                        ),
+                        #table,
+                        #drawFigure("200px","sensitivity-graph"),
+                        #drawFigure("200px","adequacy-graph"),
                     ],
                 ),
                 # Column for app graphs and plots
                 html.Div(
                     className="eight columns div-for-charts bg-grey",
                     children=[
+                        # html.Div(table,style={"height":"30%"}),
+                        html.Div(id="container-button-basic"),#style={"height":"50%"}),
                         html.Div(
                                     className="div-for-dropdown",
                                     children=[
@@ -146,24 +204,25 @@ app.layout = html.Div(
                                     ],
                                     style={"height":"50px"}
                                 ),
-                        drawFigure("230px","types-graph"),
+                        html.Div(drawFigure("400px","types-graph"),style={"height":"20%"}),
+                        # html.Div(id='container-button-basic')
                         #dcc.Graph(id="map-graph"),
-                        html.Div(
-                                    className="div-for-dropdown",
-                                    children=[
-                                        # Dropdown to select times
-                                        results_drop["drop"]
-                                    ],
-                                ),
+                        # html.Div(
+                        #             className="div-for-dropdown",
+                        #             children=[
+                        #                 # Dropdown to select times
+                        #                 results_drop["drop"]
+                        #             ],
+                        #         ),
                         #dcc.Graph(id="histogram"),
-                        drawFigure("230px","result-graph"),
-                        html.Div(
-                                    className="div-for-dropdown",
-                                    children=[
-                                        genotype_drop["drop"]
-                                    ],
-                                ),
-                        drawFigure("230px","genotype-graph")
+                        # drawFigure("230px","result-graph"),
+                        # html.Div(
+                        #             className="div-for-dropdown",
+                        #             children=[
+                        #                 genotype_drop["drop"]
+                        #             ],
+                        #         ),
+                        # drawFigure("230px","genotype-graph")
                     ],
                 ),
             ],
@@ -182,45 +241,48 @@ def update_time_range(input_range):
     """Control time range selection."""
     start_date=last_year_date
     end_date=date.today()
-    if input_range == 'Last week':
-        start_date = last_week_date
-    elif input_range == 'Last month':
-        start_date =last_month_date
-    elif input_range == 'Last year':
-        start_date = last_year_date
-    end_date = date.today()
+    if input_range == 'Próxima semana':
+        end_date = next_week_date
+    elif input_range == 'Próximo mes':
+        end_date =next_month_date
+    else:
+        end_date = next_month_date
+    start_date = date.today()
     return start_date, end_date
 
 ####################### CALL BACK UPDATE GRAPHS
 @app.callback(
 
     Output(component_id='types-graph', component_property='figure'),
-    Output(component_id='result-graph', component_property='figure'),
-    Output(component_id='genotype-graph', component_property='figure'),
-    Output(component_id='adequacy-graph', component_property='figure'),
-    Output(component_id='sensitivity-graph', component_property='figure'),
-    Output(component_id='tests', component_property='children'),
-    Output(component_id='average', component_property='children'),
-    Output(component_id='positivity_rate', component_property='children'),
+    Output('container-button-basic', 'children'),
+    # Output(component_id='result-graph', component_property='figure'),
+    # Output(component_id='genotype-graph', component_property='figure'),
+    # Output(component_id='adequacy-graph', component_property='figure'),
+    # Output(component_id='sensitivity-graph', component_property='figure'),
+    # Output(component_id='tests', component_property='children'),
+    # Output(component_id='average', component_property='children'),
+    # Output(component_id='positivity_rate', component_property='children'),
 
     Input(component_id= 'date_start', component_property='date'),
     Input(component_id= 'date_end', component_property='date'),
     Input(component_id='type', component_property='value'),
-    Input(component_id='results', component_property='value'),
-    Input(component_id='genotype', component_property='value'),
+    Input(component_id='variedades_drop', component_property='value')
+
+    # Input(component_id='results', component_property='value'),
+    # Input(component_id='genotype', component_property='value'),
 
 )
-def update_graphs(start_date,end_date,type_label,result_label,genotype_label):
+def update_graphs(start_date,end_date,type_label,variedades_selected):#result_label,genotype_label):
     if type_label==None:
         type_label="Liquid based"
-    if result_label==None:
-        type_label="Negative"
-    if genotype_label==None:
-        genotype_label="HPV 16"
+    # if result_label==None:
+    #     type_label="Negative"
+    # if genotype_label==None:
+    #     genotype_label="HPV 16"
 
     type_label=str(type_label)
-    result_label=str(result_label)
-    genotype_label=str(genotype_label)
+    # result_label=str(result_label)
+    # genotype_label=str(genotype_label)
 
     #################### FILTER BY DATE
 
@@ -255,10 +317,10 @@ def update_graphs(start_date,end_date,type_label,result_label,genotype_label):
 ############# GRAPH BY TYPE
     if type_label[:3]=="All":
         type_label="All"
-    if genotype_label[:3]=="All":
-        genotype_label="All"
-    if result_label[:3]=="All":
-        result_label="All"
+    # if genotype_label[:3]=="All":
+    #     genotype_label="All"
+    # if result_label[:3]=="All":
+    #     result_label="All"
 
     types_dict=dict()
     for possibility in ["All"]+type_list:
@@ -268,37 +330,15 @@ def update_graphs(start_date,end_date,type_label,result_label,genotype_label):
 
 #################################### GRAPH BY RESULT ############
 
-    results_dict=dict()
-    for possibility in ["All"]+results_list:
-        results_dict[possibility]=make_plotable(filtered_Rec_df,{"result":possibility,"type":type_label})
 
-    results_graph=scatter_graph(result_label,results_dict)
-
-#################################### GRAPH BY RESULT ############
-
-    genotype_dict=dict()
-    for possibility in ["All"]+genotype_list:
-        genotype_dict[possibility]=make_plotable(filtered_Rec_df,{"genotype":possibility,"type":type_label,"result":result_label})
-
-    genotype_graph=scatter_graph(genotype_label,genotype_dict)
+    df_info = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles a fin del periodo"])
+    for variedad in variedades_selected:
+        row=pd.DataFrame({"Variedad":variedad,"Tallos sembrados":np.random.choice(range(1000,2000)),"Disponibles a fin del periodo":np.random.choice(range(1000,1800))},index=[0])
+        df_info=pd.concat([df_info,row])#,ignore_index=True)
 
 
-############################################### SENSITIVITY GRAPH
-
-    sensitivity_dict=dict()
-    sensitivity_dict["Real Sensitivity"]=make_plotable(filtered_Rec_df,{"cytology":"Positivecytology","hystology":"Positivehystology"})
-    sensitivity_dict["Theoretical"]=make_plotable(filtered_Rec_df,{"cytology":"Positivecytology"})
-    sensitivity_graph=sensitivity_scatter_graph(sensitivity_dict)
-
-
-    ############## GRAPH ADEQUAC
-
-    adequate=filtered_Rec_df[filtered_Rec_df["adequacy"]=="Sat"].shape[0]
-    inadequate_processed=filtered_Rec_df[filtered_Rec_df["adequacy"]=="Insat_P"].shape[0]
-    inadequate_not_processed=filtered_Rec_df[filtered_Rec_df["adequacy"]=="Insat_NP"].shape[0]
-    adequacy_graph=make_adequacy_graph(adequate,inadequate_processed,inadequate_not_processed)
-
-    return  type_graph,results_graph,genotype_graph,sensitivity_graph,adequacy_graph,number_of_tests,average,positive_rate
+    info = dbc.Table.from_dataframe(df_info, striped=True, bordered=True, hover=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"},id="info_table")
+    return  type_graph,info#,number_of_tests,average,positive_rate
 
 
 #######################################################
