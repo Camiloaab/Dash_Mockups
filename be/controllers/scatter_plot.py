@@ -27,7 +27,7 @@ def scatter_graph(choice:str,possibilities:dict):
         t=0, #top margin
 
     ),
-    height=250,
+    height=350,
     template='plotly_dark',
     plot_bgcolor= 'rgba(0, 0, 0, 0)',
     paper_bgcolor= 'rgba(0, 0, 0, 0)',
