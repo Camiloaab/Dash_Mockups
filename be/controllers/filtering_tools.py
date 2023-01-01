@@ -1,6 +1,7 @@
 """Use to filter datframe based on start_date and end_date."""
 import pandas as pd
-from sample_data import week_day
+from datetime import timedelta
+#from sample_data import week_day
 
 def filter_dataframe(df, start_date, end_date):
     """Filter a datframe based on to dates."""
@@ -44,3 +45,11 @@ def make_plotable(df,dictionary_of_choices):
             short_df=short_df[short_df[key]==dictionary_of_choices[key]]
 
     return pd.DataFrame(short_df["day"].value_counts().reset_index().values,columns=["x","y"]).sort_values(by="x")
+
+def filter_planted_after(df, start_date):### select only those planted after a given date
+    """Filter a datframe based on to dates."""
+    filtered_df= df[df['planted_on']>=start_date]
+    return filtered_df
+
+def daterange(start, end):
+  return [start + timedelta(n) for n in range(int((end - start).days))]
