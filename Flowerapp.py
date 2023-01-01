@@ -121,7 +121,7 @@ app.layout = html.Div(
                                 src=app.get_asset_url("trigal.png"),
                                 style={"width":"100%","height":"10%"}
                             ),
-                            href="https://umiamihealth.org/en/",
+                            href="https://floreseltrigal.com/",
                         ),
                         html.H1("Pronóstico de producción",style={"text-align":"center"}),
                         html.P('Seleccione la fecha de inicio del pronóstico'),
@@ -180,6 +180,7 @@ app.layout = html.Div(
                                 ),
                             ],
                         ),
+                        html.Div(html.Button('Calcular', id='submit-val', n_clicks=0,style={"textalign":"center"}))
                     ],
                 ),
                 # Column for app graphs and plots
