@@ -4,7 +4,7 @@ from dash import html,dash_table
 import pandas as pd
 import numpy as np
 import plotly.express as px
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output,State
 from plotly import graph_objs as go
 from plotly.graph_objs import *
 import dash_bootstrap_components as dbc
@@ -31,14 +31,14 @@ bloques_list=["Todos los bloques"]+list(df["block"].unique())
 variedades_list=list(df["variety"].unique())
 ########################
 ###########################
-df_info = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles a fin del periodo"])
-for variedad in variedades_list[:5]:
-    row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":np.random.choice(range(1000,2000)),"Disponibles a fin del periodo":np.random.choice(range(1000,1800))},index=[0])
-    df_info=pd.concat([df_info,row])#,ignore_index=True)
+# df_info = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles a fin del periodo"])
+# for variedad in variedades_list[:5]:
+#     row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":np.random.choice(range(1000,2000)),"Disponibles a fin del periodo":np.random.choice(range(1000,1800))},index=[0])
+#     df_info=pd.concat([df_info,row])#,ignore_index=True)
 # info=dbc.Table(dftest.to_dict('records'), [{"name": i, "id": i} for i in dftest.columns])
 # df_info=pd.read_csv("info_df.csv")
 
-info = dbc.Table.from_dataframe(df_info, striped=True, bordered=True, hover=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"},id="info_table")
+# info = dbc.Table.from_dataframe(df_info, striped=True, bordered=True, hover=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"},id="info_table")
 
 
 
@@ -180,7 +180,10 @@ app.layout = html.Div(
                                 ),
                             ],
                         ),
-                        html.Div(html.Button('Calcular', id='submit-val', n_clicks=0,style={"textalign":"center"}))
+                        html.Div(html.Button('Calcular', id='play_button',className="me-1", n_clicks=0,style={"textalign":"center"})),
+                        html.P([
+                        html.Span("Advertencia: ", style={"color": "orange"}),
+                        html.Span("las predicciones de este modelo son estadísticas y están sujetas a errores.")],style={"margin-top":"40px"}),
                     ],
                 ),
                 # Column for app graphs and plots
@@ -189,7 +192,7 @@ app.layout = html.Div(
                     children=[
                         # html.Div(table,style={"height":"30%"}),
                         html.Div(id="container-button-basic"),#style={"height":"50%"}),
-                        html.Div(drawFigure("400px","types-graph"),style={"height":"20%"}),
+                        html.Div(drawFigure("400px","stems_graph"),style={"height":"20%"}),
                     ],
                 ),
             ],
@@ -220,20 +223,24 @@ def update_time_range(input_range):
 ####################### CALL BACK UPDATE GRAPHS
 @app.callback(
 
-    Output(component_id='types-graph', component_property='figure'),
-    Output('container-button-basic', 'children'),
-    Input(component_id= 'date_start', component_property='date'),
+    Output(component_id='stems_graph', component_property='figure'),
+    Output('container-button-basic', component_property='children'),
+    # Output(component_id='play_button',component_property='enabled'),
+    # Output(component_id='play_button',component_property="n_clicks"),
+
+    State(component_id= 'date_start', component_property='date'),
     # Input(component_id= 'date_end', component_property='date'),
-    Input(component_id='variedades_drop', component_property='value'),
-    Input(component_id='bloques_drop', component_property='value')
+    State(component_id='variedades_drop', component_property='value'),
+    State(component_id='bloques_drop', component_property='value'),
+    Input(component_id='play_button',component_property="n_clicks")
 
 )
-def update_graphs(start_date,variedades_selected,bloques_selected):
+def update_graphs(start_date,variedades_selected,bloques_selected,n_clicks):
 
     ################### FILTER BY DATE
     #end_date_prediction =pd.to_datetime(end_date).to_pydatetime()
-    start_date_prediction =pd.to_datetime(start_date).to_pydatetime()
-    end_date_prediction=start_date_prediction+timedelta(days=15)
+    start_date_prediction =(pd.to_datetime(start_date).to_pydatetime())
+    end_date_prediction=(start_date_prediction+timedelta(days=15))
     starting_date_planted = (start_date_prediction- timedelta(days = 120)).date()
     filtered_df=filter_planted_after(df,starting_date_planted)
 
@@ -258,7 +265,7 @@ def update_graphs(start_date,variedades_selected,bloques_selected):
         filtered_df=df[df["block"].isin(bloques_selected)]
 
 
-    df_report = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles a fin del periodo"])
+    df_report = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles al fin del periodo"])
 
 
 
@@ -282,17 +289,24 @@ def update_graphs(start_date,variedades_selected,bloques_selected):
         tallos_sembrados=f"{tallos_sembrados:,}"
         disponibles=get_available_stalks(filtered_df[filtered_df["variety"]==variedad],end_date_prediction,30)
         disponibles=f"{disponibles:,}"
-        row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":tallos_sembrados,"Disponibles a fin del periodo":disponibles},index=[0])
+        row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":tallos_sembrados,"Disponibles en "+str(end_date_prediction.date()):disponibles},index=[0])
         df_report=pd.concat([df_report,row])#,ignore_index=True)
     flowers_graph=scatter_graph("aneto",var)
 
     report = dbc.Table.from_dataframe(df_report, striped=True, bordered=True, hover=True,style={"width":"100%","margin-bottom":"20px","margin-top":"60px","margin-left":"20px"},id="info_table")
 
-    return  flowers_graph,report#,number_of_tests,average,positive_rate
+    return  flowers_graph,report#,True#,0#,number_of_tests,average,positive_rate
 
 
 #######################################################
+# @app.callback(
 
 
+#     Output(component_id='play_button',component_property="disabled"),
+#     Input(component_id='stems_graph', component_property='figure')
+
+# )
+# def unpush(thing):
+#     return False
 if __name__ == "__main__":
     app.run_server(debug=True)
