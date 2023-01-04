@@ -265,7 +265,7 @@ def update_graphs(start_date,variedades_selected,bloques_selected,n_clicks):
         filtered_df=df[df["block"].isin(bloques_selected)]
 
 
-    df_report = pd.DataFrame(columns=["Variedad","Tallos sembrados","Disponibles al fin del periodo"])
+    df_report = pd.DataFrame()
 
 
 
@@ -280,14 +280,14 @@ def update_graphs(start_date,variedades_selected,bloques_selected,n_clicks):
     for variedad in variedades_selected:
         draw_df=pd.DataFrame()
         draw_df["x"]=dias
-        draw_df["y"]=list(map(lambda z: get_available_stalks(filtered_df[filtered_df["variety"]==variedad],z,30),dias))
+        draw_df["y"]=list(map(lambda z: get_available_stalks(filtered_df[filtered_df["variety"]==variedad],z,1),dias))
         var[variedad]=draw_df
 
         ##############UPDATE REPORT
 
         tallos_sembrados=filtered_df[filtered_df["variety"]==variedad]["stems"].sum()
         tallos_sembrados=f"{tallos_sembrados:,}"
-        disponibles=get_available_stalks(filtered_df[filtered_df["variety"]==variedad],end_date_prediction,30)
+        disponibles=get_available_stalks(filtered_df[filtered_df["variety"]==variedad],end_date_prediction,1)
         disponibles=f"{disponibles:,}"
         row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":tallos_sembrados,"Disponibles en "+str(end_date_prediction.date()):disponibles},index=[0])
         df_report=pd.concat([df_report,row])#,ignore_index=True)
