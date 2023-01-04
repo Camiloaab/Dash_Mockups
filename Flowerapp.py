@@ -118,12 +118,12 @@ app.layout = html.Div(
                         html.A(
                             html.Img(
                                 className="logo",
-                                src=app.get_asset_url("trigal.png"),
-                                style={"width":"100%","height":"10%"}
+                                src=app.get_asset_url("capiro.jpeg"),
+                                style={"width":"60%","height":"10%","align":"centered"}
                             ),
                             href="https://floreseltrigal.com/",
                         ),
-                        html.H1("Pronóstico de producción",style={"text-align":"center"}),
+                        html.H1("Nutrición de plantas",style={"text-align":"center"}),
                         html.P('Seleccione la fecha de inicio del pronóstico'),
                         # html.Div(
                         #     className="row",
