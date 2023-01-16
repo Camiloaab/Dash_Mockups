@@ -14,6 +14,19 @@ from production_prediction import get_available_stalks
 from be.controllers.filtering_tools import filter_dataframe,make_plotable,next_monday,filter_planted_after,daterange
 from be.controllers.scatter_plot import scatter_graph
 
+##########################
+
+
+        ##############UPDATE REPORT
+
+        # tallos_sembrados=filtered_df[filtered_df["variety"]==variedad]["stems"].sum()
+        # tallos_sembrados=f"{tallos_sembrados:,}"
+        # disponibles=get_available_stalks(filtered_df[filtered_df["variety"]==variedad],end_date_prediction,1)
+        # disponibles=f"{disponibles:,}"
+        # row=pd.DataFrame({"Variedad":variedad.capitalize(),"Tallos sembrados":tallos_sembrados,"Disponibles en "+str(end_date_prediction.date()):disponibles},index=[0])
+        # df_report=pd.concat([df_report,row])#,ignore_index=True)
+
+
 
 #starting_date_planted = date.today() - timedelta(days = 300)
 df=pd.read_csv("production.csv")
@@ -25,6 +38,26 @@ for i in range(1,24):
     # df["fecha_dia_"+str(i)]=df['fecha_dia_'+str(i)].dt.date
 
 #df=filter_planted_after(df,starting_date_planted)
+######################################
+A=date(2021,7,1)
+B=A+timedelta(days=15)
+dias=daterange(A,B)
+var=dict()
+for variedad in ["chelsea","potomac early white"]:
+        draw_df=pd.DataFrame()
+        draw_df["x"]=dias
+        draw_df["y"]=list(map(lambda z: get_available_stalks(df[df["variety"]==variedad],z,1),dias))
+        var[variedad]=draw_df
+flowers_graph=scatter_graph("aneto",var)
+
+
+######
+
+# for variedad in ["chelsea","potomac early white"]:
+#         draw_df=pd.DataFrame()
+#         draw_df["x"]=dias
+#         draw_df["y"]=list(map(lambda z: get_available_stalks(df[df["variety"]==variedad],z,1),dias))
+#         var[variedad]=draw_df
 
 ######################### SOME DATA
 bloques_list=["Todos los bloques"]+list(df["block"].unique())
@@ -119,33 +152,74 @@ app.layout = html.Div(
                             html.Img(
                                 className="logo",
                                 src=app.get_asset_url("capiro.jpeg"),
-                                style={"width":"60%","height":"10%","align":"centered"}
+                                style={"width":"100%","height":"10%","align":"centered"}
                             ),
                             href="https://floreseltrigal.com/",
                         ),
                         html.H1("Nutrición de plantas",style={"text-align":"center"}),
-                        html.P('Seleccione la fecha de inicio del pronóstico'),
+                        # html.P('Seleccione la fecha de inicio del pronóstico'),
+                        # # html.Div(
+                        # #     className="row",
+                        # #     children=[
+                        # #         html.Div(
+                        # #             className="div-for-dropdown",
+                        # #             children=[
+                        # #                 dropletter["drop"]
+                        # #             ],
+                        # #         ),
+                        # #     ],
+                        # # ),
                         # html.Div(
-                        #     className="row",
+                        #     className="div-for-dropdown",
                         #     children=[
-                        #         html.Div(
-                        #             className="div-for-dropdown",
-                        #             children=[
-                        #                 dropletter["drop"]
-                        #             ],
-                        #         ),
+                        #         dcc.DatePickerSingle(
+                        #             id = 'date_start',
+                        #             style={"width":"100%"},
+                        #             date=date.today()
+                        #                 )
                         #     ],
                         # ),
-                        html.Div(
-                            className="div-for-dropdown",
-                            children=[
-                                dcc.DatePickerSingle(
-                                    id = 'date_start',
-                                    style={"width":"100%"},
-                                    date=date.today()
-                                        )
-                            ],
+                        dbc.Label("Precio de Potasio por Kg", html_for="slider"),
+                        dcc.Slider(300000, 600000, 1000,
+                        value=100,
+                        id='my-slider',
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        marks= {
+                        300000: {'label': '300k'},
+                        400000: {'label': '400k'},
+                        500000: {'label': '500k'},
+                        600000:{'label':'600k'},
+                        },
                         ),
+                        html.H1(""),
+                        dbc.Label("Precio de Fósforo por Kg", html_for="slider"),
+                        dcc.Slider(500000, 2000000, 1000,
+                        value=100,
+                        id='my-slider',
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        marks={
+                        500000: {'label': '500k', },
+                        1000000: {'label': '1M'},
+                        1500000: {'label': '1.5M'},
+                        2000000: {'label': '2M'}
+                        },
+                        ),
+                        html.H1(""),
+                        dbc.Label("Precio de Nitrógeno por Kg", html_for="slider"),
+                        dcc.Slider(100000, 300000, 1000,
+                        value=100,
+                        id='my-slider',
+                        tooltip={"placement": "bottom", "always_visible": True},
+                        marks={
+                        100000: {'label': '100k'},
+                        150000: {'label': '150k'},
+                        200000: {'label': '200k'},
+                        250000: {'label': '250k'},
+                        300000: {'label': '300k'},
+                        },
+                        ),
+                        html.H1(""),
+                        #html.Div(id='slider-output-container'),
                         # Change to side-by-side for mobile layout
                         # html.Div(
                         #     className="div-for-dropdown",
@@ -156,30 +230,30 @@ app.layout = html.Div(
                         #                 )
                         #     ],
                         # ),
-                        html.P('Seleccione una variedad'),
-                        html.Div(
-                            className="row",
-                            children=[
-                                html.Div(
-                                    className="div-for-dropdown",
-                                    children=[
-                                        variedades_drop["drop"]
-                                    ],
-                                ),
-                            ],
-                        ),
-                        html.P('Seleccione un bloque'),
-                        html.Div(
-                            className="row",
-                            children=[
-                                html.Div(
-                                    className="div-for-dropdown",
-                                    children=[
-                                        bloques_drop["drop"]
-                                    ],
-                                ),
-                            ],
-                        ),
+                        # html.P('Seleccione una variedad'),
+                        # html.Div(
+                        #     className="row",
+                        #     children=[
+                        #         html.Div(
+                        #             className="div-for-dropdown",
+                        #             children=[
+                        #                 variedades_drop["drop"]
+                        #             ],
+                        #         ),
+                        #     ],
+                        # ),
+                        # html.P('Seleccione un bloque'),
+                        # html.Div(
+                        #     className="row",
+                        #     children=[
+                        #         html.Div(
+                        #             className="div-for-dropdown",
+                        #             children=[
+                        #                 bloques_drop["drop"]
+                        #             ],
+                        #         ),
+                        #     ],
+                        # ),
                         html.Div(html.Button('Calcular', id='play_button',className="me-1", n_clicks=0,style={"textalign":"center"})),
                         html.P([
                         html.Span("Advertencia: ", style={"color": "orange"}),
@@ -192,7 +266,7 @@ app.layout = html.Div(
                     children=[
                         # html.Div(table,style={"height":"30%"}),
                         html.Div(id="container-button-basic"),#style={"height":"50%"}),
-                        html.Div(drawFigure("400px","stems_graph"),style={"height":"20%"}),
+                        html.Div(flowers_graph,style={"height":"20%"}),
                     ],
                 ),
             ],
@@ -221,20 +295,20 @@ def update_time_range(input_range):
     return start_date#, end_date
 
 ####################### CALL BACK UPDATE GRAPHS
-@app.callback(
+# @app.callback(
 
-    Output(component_id='stems_graph', component_property='figure'),
-    Output('container-button-basic', component_property='children'),
-    # Output(component_id='play_button',component_property='enabled'),
-    # Output(component_id='play_button',component_property="n_clicks"),
+#     Output(component_id='stems_graph', component_property='figure'),
+#     Output('container-button-basic', component_property='children'),
+#     # Output(component_id='play_button',component_property='enabled'),
+#     # Output(component_id='play_button',component_property="n_clicks"),
 
-    State(component_id= 'date_start', component_property='date'),
-    # Input(component_id= 'date_end', component_property='date'),
-    State(component_id='variedades_drop', component_property='value'),
-    State(component_id='bloques_drop', component_property='value'),
-    Input(component_id='play_button',component_property="n_clicks")
+#     State(component_id= 'date_start', component_property='date'),
+#     # Input(component_id= 'date_end', component_property='date'),
+#     State(component_id='variedades_drop', component_property='value'),
+#     State(component_id='bloques_drop', component_property='value'),
+#     Input(component_id='play_button',component_property="n_clicks")
 
-)
+# )
 def update_graphs(start_date,variedades_selected,bloques_selected,n_clicks):
 
     ################### FILTER BY DATE
