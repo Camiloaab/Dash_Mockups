@@ -4,8 +4,9 @@
 
 /* Main Layout ––––––––––––––––––––––––––––––––––––––––––––––––––*/
 body {
-  background-color: #1E1E1E;
-  color: #d8d8d8;
+  /* background-color: #1E1E1E; */
+ background-color: #FFFFFF;
+  /* color: #d8d8d8; */
   margin: 0;
   padding: 0;
 }
@@ -26,7 +27,8 @@ a {
   text-decoration: none;
 }
 .bg-grey{
-  background-color: #31302F;
+  background-color: #FFFFFF;
+  /* background-color: #31302F; */
 }
 .text-padding{
   padding: 5px;

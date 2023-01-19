@@ -266,7 +266,7 @@ app.layout = html.Div(
                     children=[
                         # html.Div(table,style={"height":"30%"}),
                         html.Div(id="container-button-basic"),#style={"height":"50%"}),
-                        html.Div(flowers_graph,style={"height":"20%"}),
+                        # html.Div(flowers_graph,style={"height":"20%"}),
                     ],
                 ),
             ],
